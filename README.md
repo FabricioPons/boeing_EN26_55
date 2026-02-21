@@ -1,70 +1,114 @@
-# Getting Started with Create React App
+# Boeing 777F Lock Detection System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React web application for real-time monitoring of cargo deck ULD (Unit Load Device) lock engagement status. Supports three operating modes selectable directly from the app's top bar.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Modes
 
-### `npm start`
+| Mode | Description | Hardware Required |
+|------|-------------|-------------------|
+| **USB** | Connects to Arduino via USB Serial (Web Serial API) | Arduino via USB cable |
+| **Wireless** | Connects to Arduino via Wi-Fi WebSocket | Arduino on same Wi-Fi network |
+| **Demo** | Simulated sensors — no hardware needed | None |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Switch between modes using the tab bar at the top of the app. No restart required.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Getting Started
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
+- Node.js 18+
+- npm
+- For USB mode: Chrome, Edge, or Opera (Web Serial API support)
+- For Wireless mode: Arduino Uno Wi-Fi Rev4 on the same network
 
-### `npm run build`
+### Install & Run
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+npm install
+npm start
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## Project Structure
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+src/
+├── App.js                  # Mode selector shell (top bar + routing)
+├── index.js                # React entry point
+├── modes/
+│   ├── Demo/
+│   │   └── index.js        # Simulation UI (software sensor toggle)
+│   ├── USB/
+│   │   └── index.js        # USB Serial connection UI
+│   └── Wireless/
+│       └── index.js        # Wi-Fi WebSocket connection UI
+arduino/
+├── lock_sensor_serial/
+│   └── lock_sensor_serial.ino      # Firmware for USB mode
+└── lock_sensor_websocket.ino       # Firmware for Wireless mode
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Aircraft Configurations
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Select one of three cargo layouts when starting a monitoring session:
 
-## Learn More
+- **Side by Side (L/R)** — 28 positions (AR/AL through PR/PL) for PMC/PAG pallets
+- **Center Load** — 14 center positions (A–P) for PMC pallets
+- **Lower Deck** — 16 positions for PRA/PGA containers
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Arduino Data Format
 
-### Code Splitting
+Both Arduino sketches send JSON over their respective channels:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```json
+{
+  "uldPosition": "AR",
+  "lockIndex": 0,
+  "engaged": true,
+  "value": 1
+}
+```
 
-### Analyzing the Bundle Size
+| Field | Type | Description |
+|-------|------|-------------|
+| `uldPosition` | string | ULD position identifier (e.g. "AR", "BL") |
+| `lockIndex` | number | Lock position: 0=Fwd Left, 1=Fwd Right, 2=Aft Left, 3=Aft Right |
+| `engaged` | boolean | Lock state |
+| `value` | number | Raw sensor value (1=engaged, 0=disengaged) |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## USB Mode Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+1. Flash `arduino/lock_sensor_serial/lock_sensor_serial.ino` to your Arduino
+2. Connect Arduino via USB
+3. Open the app in Chrome/Edge/Opera
+4. Select **USB** tab, choose baud rate (default: 115200), click **Connect USB**
+5. Select the Arduino port in the browser dialog
 
-### Advanced Configuration
+## Wireless Mode Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+1. Flash `arduino/lock_sensor_websocket.ino` to your Arduino
+2. Update the sketch with your Wi-Fi credentials and note the Arduino's IP address
+3. Open the app and select **Wireless** tab
+4. Enter the Arduino's IP address and port (default: 81), click **Connect**
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## Scripts
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+npm start      # Start development server
+npm run build  # Build for production
+npm test       # Run tests
+```
