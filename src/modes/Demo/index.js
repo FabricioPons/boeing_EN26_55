@@ -316,11 +316,11 @@ const LockDetectionSystem = () => {
                   ) : (
                     <div className="space-y-2">
                       {activeAlerts.map(([position, status]) => (
-                        <div
-                          key={position}
-                          className="p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded cursor-pointer hover:bg-[#ef4444]/20 animate-pulse-alert transition-colors"
-                          onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
-                        >
+                                        <div
+                                          key={position}
+                                          className="status-cell p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded cursor-pointer hover:bg-[#ef4444]/20"
+                                          onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
+                                        >
                           <div className="font-bold text-[#ef4444] text-sm">ULD {position}</div>
                           <div className="text-xs text-[#ef4444]/70">
                             {status.overallStatus === 'partial' ? 'PARTIAL LOCK FAILURE' : 'ALL LOCKS DISENGAGED'}
@@ -360,37 +360,49 @@ const LockDetectionSystem = () => {
                   GROUND OPERATOR ACCESS
                   {viewerCount > 0 && (
                     <span className="ml-auto flex items-center gap-1 text-xs font-normal text-[#22c55e]">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
                       {viewerCount} VIEWER{viewerCount !== 1 ? 'S' : ''}
                     </span>
                   )}
                 </div>
                 <div className="p-4 space-y-3">
-                  <div className="flex justify-center p-3 bg-white rounded">
-                    <QRCodeSVG value={viewerURL} size={120} level="M" />
-                  </div>
-                  <p className="text-xs text-[#6b7280] text-center">
-                    Scan with phone to view live status
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 px-2 py-1.5 bg-[#1e3a5f] rounded text-xs text-[#6b7280] truncate border border-[#2d4a6f] select-all">
-                      {viewerURL}
+                  {socketConnected ? (
+                    <>
+                      <div className="flex justify-center p-3 bg-white rounded">
+                        <QRCodeSVG value={viewerURL} size={120} level="M" />
+                      </div>
+                      <p className="text-xs text-[#6b7280] text-center">
+                        Scan with phone on same network
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 px-2 py-1.5 bg-[#1e3a5f] rounded text-xs text-[#6b7280] truncate border border-[#2d4a6f] select-all">
+                          {viewerURL}
+                        </div>
+                        <button
+                          onClick={copyViewerLink}
+                          className="shrink-0 p-1.5 rounded bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] transition-colors"
+                          title="Copy link"
+                        >
+                          {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      {linkCopied && (
+                        <p className="text-xs text-[#22c55e] text-center">Link copied!</p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="text-[#fbbf24] text-xs mb-2 font-bold">RELAY SERVER OFFLINE</div>
+                      <p className="text-xs text-[#6b7280] mb-3">
+                        To enable phone viewing, run the relay server locally:
+                      </p>
+                      <code className="block px-3 py-2 bg-[#1e3a5f] rounded text-xs text-[#00d4ff] font-mono">
+                        node server.js
+                      </code>
+                      <p className="text-xs text-[#6b7280] mt-3">
+                        Phone must be on the same WiFi network
+                      </p>
                     </div>
-                    <button
-                      onClick={copyViewerLink}
-                      className="shrink-0 p-1.5 rounded bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] transition-colors"
-                      title="Copy link"
-                    >
-                      {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                  {linkCopied && (
-                    <p className="text-xs text-[#22c55e] text-center">Link copied!</p>
-                  )}
-                  {!socketConnected && (
-                    <p className="text-xs text-[#fbbf24] text-center">
-                      Relay server offline. Run: node server.js
-                    </p>
                   )}
                 </div>
               </div>
@@ -437,11 +449,11 @@ const LockDetectionSystem = () => {
                             return (
                               <div
                                 key={position}
-                                className={`relative border rounded p-2 min-h-16 flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 ${isAlert ? 'animate-pulse-alert' : ''}`}
+                                className="status-cell relative border rounded p-2 min-h-16 flex flex-col items-center justify-center cursor-pointer hover:scale-105"
                                 style={{ 
                                   backgroundColor: colors.bg + '15', 
                                   borderColor: colors.border,
-                                  boxShadow: isAlert ? `0 0 10px ${colors.bg}40` : 'none'
+                                  boxShadow: isAlert ? `0 0 12px ${colors.bg}50` : `0 0 4px ${colors.bg}20`
                                 }}
                                 onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
                               >
@@ -450,8 +462,8 @@ const LockDetectionSystem = () => {
                                     <Radio className="h-3 w-3 text-[#00d4ff]" />
                                   </div>
                                 )}
-                                <div className="font-bold text-sm" style={{ color: colors.text }}>{position}</div>
-                                <div className="flex items-center mt-1">
+                                <div className="status-text font-bold text-sm" style={{ color: colors.text }}>{position}</div>
+                                <div className="flex items-center mt-1 status-indicator">
                                   {status.overallStatus === 'engaged'
                                     ? <CheckCircle className="h-4 w-4" style={{ color: colors.border }} />
                                     : <AlertTriangle className="h-4 w-4" style={{ color: colors.border }} />}
@@ -503,7 +515,7 @@ const LockDetectionSystem = () => {
                   return (
                     <div
                       key={index}
-                      className={`p-5 rounded border transition-all ${isActiveSensor ? 'ring-2 ring-[#00d4ff]' : ''} ${!lock.engaged ? 'animate-pulse-alert' : ''}`}
+                      className={`status-cell p-5 rounded border ${isActiveSensor ? 'ring-2 ring-[#00d4ff]' : ''}`}
                       style={{ backgroundColor: colors.bg + '10', borderColor: colors.border }}
                     >
                       <div className="flex items-center justify-between mb-4">

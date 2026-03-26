@@ -124,3 +124,21 @@ body {
   background: rgba(0, 212, 255, 0.3);
   color: #ffffff;
 }
+
+/* Smooth Status Transitions - prevents blinking */
+.status-cell {
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.status-indicator {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.lock-status {
+  transition: all 0.3s ease;
+}
+
+/* Smooth text color transitions */
+.status-text {
+  transition: color 0.3s ease;
+}
