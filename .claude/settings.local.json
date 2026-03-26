@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx react-scripts:*)",
+      "Bash(timeout 3 node:*)",
+      "Bash(gtimeout 3:*)",
+      "Bash(node:*)"
     ]
   }
 }
