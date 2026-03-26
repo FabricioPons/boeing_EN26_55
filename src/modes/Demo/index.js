@@ -22,36 +22,38 @@ const playAlertBeep = () => {
   } catch (e) {}
 };
 
-const LockDetectionSystem = () => {
-  const positionLayouts = {
-    sideBySide: {
-      name: 'SIDE BY SIDE (L/R)',
-      positions: [
-        ['AR', 'BR', 'CR', 'DR', 'ER', 'FR', 'GR', 'HR', 'JR', 'KR', 'LR', 'MR', 'NR', 'PR'],
-        ['AL', 'BL', 'CL', 'DL', 'EL', 'FL', 'GL', 'HL', 'JL', 'KL', 'LL', 'ML', 'NL', 'PL']
-      ],
-      gridCols: 14,
-      description: 'Left and Right side positions for PMC/PAG pallets'
-    },
-    centerLoad: {
-      name: 'CENTER LOAD',
-      positions: [
-        ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P']
-      ],
-      gridCols: 14,
-      description: 'Single center positions for PMC pallets'
-    },
-    lowerDeck: {
-      name: 'LOWER DECK',
-      positions: [
-        ['AR', 'BR', 'CDR', 'EF', 'GH', 'JK', 'LMR', 'NPR'],
-        ['AL', 'BL', 'CDL', '', '', '', 'LML', 'NPL']
-      ],
-      gridCols: 8,
-      description: 'Lower deck positions for PRA/PGA containers'
-    }
-  };
+const positionLayouts = {
+  sideBySide: {
+    name: 'SIDE BY SIDE (L/R)',
+    positions: [
+      ['AR', 'BR', 'CR', 'DR', 'ER', 'FR', 'GR', 'HR', 'JR', 'KR', 'LR', 'MR', 'NR', 'PR'],
+      ['AL', 'BL', 'CL', 'DL', 'EL', 'FL', 'GL', 'HL', 'JL', 'KL', 'LL', 'ML', 'NL', 'PL']
+    ],
+    gridCols: 14,
+    description: 'Left and Right side positions for PMC/PAG pallets'
+  },
+  centerLoad: {
+    name: 'CENTER LOAD',
+    positions: [
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P']
+    ],
+    gridCols: 14,
+    description: 'Single center positions for PMC pallets'
+  },
+  lowerDeck: {
+    name: 'LOWER DECK',
+    positions: [
+      ['AR', 'BR', 'CDR', 'EF', 'GH', 'JK', 'LMR', 'NPR'],
+      ['AL', 'BL', 'CDL', '', '', '', 'LML', 'NPL']
+    ],
+    gridCols: 8,
+    description: 'Lower deck positions for PRA/PGA containers'
+  }
+};
 
+const lockPositions = ['Forward Left', 'Forward Right', 'Aft Left', 'Aft Right'];
+
+const LockDetectionSystem = () => {
   const [currentView, setCurrentView] = useState('configuration');
   const [selectedLayout, setSelectedLayout] = useState(null);
   const [uldStatuses, setUldStatuses] = useState({});
@@ -71,8 +73,6 @@ const LockDetectionSystem = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [viewerURL, setViewerURL] = useState(`${window.location.origin}?mode=viewer`);
   const [socketConnected, setSocketConnected] = useState(false);
-
-  const lockPositions = ['Forward Left', 'Forward Right', 'Aft Left', 'Aft Right'];
 
   // Connect to relay server for ground operator broadcasting
   useEffect(() => {
@@ -246,7 +246,6 @@ const LockDetectionSystem = () => {
   const MonitoringView = () => {
     const layout = positionLayouts[selectedLayout];
     const activeAlerts = Object.entries(uldStatuses).filter(([_, status]) => status.overallStatus !== 'engaged');
-    const allPositions = layout.positions.flat().filter(p => p);
     const engagedCount = Object.values(uldStatuses).filter(s => s.overallStatus === 'engaged').length;
 
     return (
