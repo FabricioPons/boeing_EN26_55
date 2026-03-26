@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Aviation Display Font Stack */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Aviation Color System */
+  --avion-bg-primary: #0a0f1a;
+  --avion-bg-secondary: #0d1321;
+  --avion-bg-tertiary: #1e3a5f;
+  --avion-border: #1e3a5f;
+  
+  /* Status Colors (EICAS Standard) */
+  --avion-safe: #22c55e;
+  --avion-caution: #fbbf24;
+  --avion-alert: #ef4444;
+  --avion-info: #00d4ff;
+  
+  /* Text Colors */
+  --avion-text-primary: #ffffff;
+  --avion-text-secondary: #6b7280;
+  --avion-text-accent: #00d4ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--avion-bg-primary);
+  color: var(--avion-text-primary);
+}
+
+/* Animation Keyframes */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -10,10 +46,81 @@
 
 @keyframes pulse-alert {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-  50%       { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  50%      { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
 }
 .animate-pulse-alert { animation: pulse-alert 1.5s ease-in-out infinite; }
 
-html.dark body {
-  background-color: #0F172A;
+@keyframes pulse-safe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3); }
+  50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+.animate-pulse-safe { animation: pulse-safe 2s ease-in-out infinite; }
+
+@keyframes glow-cyan {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.3); }
+  50%      { box-shadow: 0 0 15px rgba(0, 212, 255, 0.5); }
+}
+.animate-glow-cyan { animation: glow-cyan 2s ease-in-out infinite; }
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Aviation Panel Styles */
+.avion-panel {
+  background: linear-gradient(180deg, #0d1321 0%, #0a0f1a 100%);
+  border: 1px solid #1e3a5f;
+  border-radius: 4px;
+}
+
+.avion-panel-header {
+  background: #1e3a5f;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2d4a6f;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #00d4ff;
+  text-transform: uppercase;
+}
+
+/* Status Indicators */
+.status-locked {
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.status-unlocked {
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.status-unknown {
+  background: #6b7280;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0f1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2d4a6f;
+}
+
+/* Selection */
+::selection {
+  background: rgba(0, 212, 255, 0.3);
+  color: #ffffff;
 }

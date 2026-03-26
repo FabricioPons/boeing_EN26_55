@@ -25,7 +25,7 @@ const playAlertBeep = () => {
 const LockDetectionSystem = () => {
   const positionLayouts = {
     sideBySide: {
-      name: 'Side by Side (L/R)',
+      name: 'SIDE BY SIDE (L/R)',
       positions: [
         ['AR', 'BR', 'CR', 'DR', 'ER', 'FR', 'GR', 'HR', 'JR', 'KR', 'LR', 'MR', 'NR', 'PR'],
         ['AL', 'BL', 'CL', 'DL', 'EL', 'FL', 'GL', 'HL', 'JL', 'KL', 'LL', 'ML', 'NL', 'PL']
@@ -34,7 +34,7 @@ const LockDetectionSystem = () => {
       description: 'Left and Right side positions for PMC/PAG pallets'
     },
     centerLoad: {
-      name: 'Center Load',
+      name: 'CENTER LOAD',
       positions: [
         ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P']
       ],
@@ -42,7 +42,7 @@ const LockDetectionSystem = () => {
       description: 'Single center positions for PMC pallets'
     },
     lowerDeck: {
-      name: 'Lower Deck',
+      name: 'LOWER DECK',
       positions: [
         ['AR', 'BR', 'CDR', 'EF', 'GH', 'JK', 'LMR', 'NPR'],
         ['AL', 'BL', 'CDL', '', '', '', 'LML', 'NPL']
@@ -154,10 +154,10 @@ const LockDetectionSystem = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'engaged':    return { bg: '#10B981', border: '#059669', text: '#065F46' };
-      case 'partial':    return { bg: '#F59E0B', border: '#D97706', text: '#92400E' };
-      case 'disengaged': return { bg: '#EF4444', border: '#DC2626', text: '#991B1B' };
-      default:           return { bg: '#6B7280', border: '#4B5563', text: '#1F2937' };
+      case 'engaged':    return { bg: '#22c55e', border: '#16a34a', text: '#22c55e' };
+      case 'partial':    return { bg: '#fbbf24', border: '#d97706', text: '#fbbf24' };
+      case 'disengaged': return { bg: '#ef4444', border: '#dc2626', text: '#ef4444' };
+      default:           return { bg: '#6b7280', border: '#4b5563', text: '#6b7280' };
     }
   };
 
@@ -253,36 +253,50 @@ const LockDetectionSystem = () => {
   }, []);
 
   const ConfigurationView = () => (
-    <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900 p-6">
+    <div className="animate-fadeIn min-h-screen bg-[#0a0f1a] p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-8 mb-6 border border-gray-100 dark:border-slate-700">
-          <div className="flex items-center space-x-3 mb-2">
-            <Plane className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Boeing 777F Lock Detection System</h1>
-              <p className="text-gray-500 dark:text-slate-400">USB Serial Connection — Select Aircraft Configuration</p>
+        {/* Header Panel */}
+        <div className="avion-panel mb-6">
+          <div className="avion-panel-header">SYSTEM CONFIGURATION</div>
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-[#1e3a5f] rounded flex items-center justify-center">
+                <Plane className="h-6 w-6 text-[#00d4ff]" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-wide">BOEING 777F LOCK DETECTION</h1>
+                <p className="text-[#6b7280] text-sm tracking-wider">USB SERIAL CONNECTION MODE</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-400 dark:text-slate-500 mt-3">
-            <Cable className="h-4 w-4" />
-            <span>Wired USB connection to Arduino Uno Wi-Fi Rev4</span>
+            <div className="flex items-center gap-2 text-xs text-[#00d4ff] bg-[#1e3a5f]/50 px-3 py-2 rounded">
+              <Cable className="h-4 w-4" />
+              <span>Wired USB connection to Arduino Uno Wi-Fi Rev4</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(positionLayouts).map(([key, config]) => (
-            <div
-              key={key}
-              onClick={() => startMonitoring(key)}
-              className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border-2 border-gray-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg cursor-pointer transition-all duration-200"
-            >
-              <h3 className="font-bold text-lg text-gray-900 dark:text-slate-100 mb-2">{config.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">{config.description}</p>
-              <div className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                {config.positions.flat().filter(p => p).length} positions
-              </div>
+        {/* Layout Selection */}
+        <div className="avion-panel">
+          <div className="avion-panel-header">SELECT AIRCRAFT CONFIGURATION</div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Object.entries(positionLayouts).map(([key, config]) => (
+                <button
+                  key={key}
+                  onClick={() => startMonitoring(key)}
+                  className="bg-[#1e3a5f]/50 p-5 rounded border border-[#2d4a6f] hover:border-[#00d4ff] hover:bg-[#1e3a5f] transition-all text-left group"
+                >
+                  <h3 className="font-bold text-white mb-2 tracking-wide group-hover:text-[#00d4ff] transition-colors">
+                    {config.name}
+                  </h3>
+                  <p className="text-xs text-[#6b7280] mb-3">{config.description}</p>
+                  <div className="text-[#00d4ff] font-bold text-sm">
+                    {config.positions.flat().filter(p => p).length} POSITIONS
+                  </div>
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
@@ -291,35 +305,59 @@ const LockDetectionSystem = () => {
   const MonitoringView = () => {
     const layout = positionLayouts[selectedLayout];
     const activeAlerts = Object.entries(uldStatuses).filter(([_, status]) => status.overallStatus !== 'engaged');
+    const engagedCount = Object.values(uldStatuses).filter(s => s.overallStatus === 'engaged').length;
 
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        {/* Status Bar */}
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => { disconnectFromArduino(); setCurrentView('configuration'); }} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-                <ArrowLeft className="h-6 w-6" />
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => { disconnectFromArduino(); setCurrentView('configuration'); }} 
+                className="text-[#6b7280] hover:text-[#00d4ff] transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Lock Status Monitor</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400">{layout.name} — USB Serial</p>
+                <h1 className="text-lg font-bold text-white tracking-wide">LOCK STATUS MONITOR</h1>
+                <p className="text-xs text-[#6b7280] tracking-wider">{layout.name} - USB SERIAL</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
+            <div className="flex items-center gap-4">
+              {/* Status Summary */}
+              <div className="flex items-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#22c55e]"></div>
+                  <span className="text-[#22c55e] font-bold">{engagedCount}</span>
+                  <span className="text-[#6b7280]">SECURE</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#ef4444]"></div>
+                  <span className="text-[#ef4444] font-bold">{activeAlerts.length}</span>
+                  <span className="text-[#6b7280]">ALERT</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[#1e3a5f]"></div>
+              {/* Connection Status */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e3a5f] rounded">
                 <div className={`w-2 h-2 rounded-full ${
-                  connectionStatus === 'connected'  ? 'bg-green-500' :
-                  connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                  connectionStatus === 'error'      ? 'bg-red-500' : 'bg-gray-400 dark:bg-slate-500'
+                  connectionStatus === 'connected'  ? 'bg-[#22c55e]' :
+                  connectionStatus === 'connecting' ? 'bg-[#fbbf24] animate-pulse' :
+                  connectionStatus === 'error'      ? 'bg-[#ef4444]' : 'bg-[#6b7280]'
                 }`}></div>
-                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                  {connectionStatus === 'connected' ? 'USB Connected' :
-                   connectionStatus === 'connecting' ? 'Connecting...' :
-                   connectionStatus === 'error' ? 'Connection Error' : 'Disconnected'}
+                <span className="text-xs font-bold text-[#6b7280]">
+                  {connectionStatus === 'connected' ? 'USB CONNECTED' :
+                   connectionStatus === 'connecting' ? 'CONNECTING...' :
+                   connectionStatus === 'error' ? 'ERROR' : 'DISCONNECTED'}
                 </span>
               </div>
-              <button onClick={() => setCurrentView('report')} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                <FileText className="h-4 w-4" /><span>Flight Report</span>
+              <button
+                onClick={() => setCurrentView('report')}
+                className="flex items-center gap-2 px-4 py-2 bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] rounded text-xs font-bold transition-colors"
+              >
+                <FileText className="h-4 w-4" />
+                <span>REPORT</span>
               </button>
             </div>
           </div>
@@ -327,50 +365,55 @@ const LockDetectionSystem = () => {
 
         <div className="max-w-7xl mx-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left Sidebar */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />Active Alerts
-                </h2>
-                {activeAlerts.length === 0 ? (
-                  <div className="text-center py-6">
-                    <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-slate-400">All Locks Secured</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {activeAlerts.map(([position, status]) => (
-                      <div
-                        key={position}
-                        className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 animate-pulse-alert transition-colors"
-                        onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
-                      >
-                        <div className="font-semibold text-red-900 dark:text-red-300">ULD {position}</div>
-                        <div className="text-sm text-red-700 dark:text-red-400">
-                          {status.overallStatus === 'partial' ? 'Partial Lock Failure' : 'All Locks Disengaged'}
+              {/* Alerts Panel */}
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  ACTIVE ALERTS
+                </div>
+                <div className="p-4">
+                  {activeAlerts.length === 0 ? (
+                    <div className="text-center py-6">
+                      <CheckCircle className="h-10 w-10 text-[#22c55e] mx-auto mb-2" />
+                      <p className="text-xs text-[#22c55e] font-bold">ALL LOCKS SECURE</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {activeAlerts.map(([position, status]) => (
+                        <div
+                          key={position}
+                          className="p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded cursor-pointer hover:bg-[#ef4444]/20 animate-pulse-alert transition-colors"
+                          onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
+                        >
+                          <div className="font-bold text-[#ef4444] text-sm">ULD {position}</div>
+                          <div className="text-xs text-[#ef4444]/70">
+                            {status.overallStatus === 'partial' ? 'PARTIAL LOCK FAILURE' : 'ALL LOCKS DISENGAGED'}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* USB Connection Panel */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 flex items-center">
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center gap-2">
                   {connectionStatus === 'connected'
-                    ? <Cable className="h-4 w-4 mr-2 text-green-500" />
-                    : <Unplug className="h-4 w-4 mr-2 text-gray-400 dark:text-slate-500" />}
-                  USB Serial Connection
-                </h3>
-                <div className="space-y-3">
+                    ? <Cable className="h-4 w-4 text-[#22c55e]" />
+                    : <Unplug className="h-4 w-4" />}
+                  USB SERIAL CONNECTION
+                </div>
+                <div className="p-4 space-y-3">
                   <div>
-                    <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">Baud Rate</label>
+                    <label className="block text-xs text-[#6b7280] mb-1 tracking-wider">BAUD RATE</label>
                     <select
                       value={baudRate}
                       onChange={(e) => setBaudRate(e.target.value)}
                       disabled={connectionStatus === 'connected'}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                      className="w-full px-3 py-2 border border-[#2d4a6f] rounded text-sm bg-[#1e3a5f] text-white focus:ring-2 focus:ring-[#00d4ff] focus:border-[#00d4ff] disabled:opacity-60"
                     >
                       <option value="9600">9600</option>
                       <option value="19200">19200</option>
@@ -380,124 +423,155 @@ const LockDetectionSystem = () => {
                     </select>
                   </div>
                   {connectionError && (
-                    <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-[#ef4444] bg-[#ef4444]/10 p-2 rounded border border-[#ef4444]/30">
                       {connectionError}
                     </div>
                   )}
                   {!('serial' in navigator) && (
-                    <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="text-xs text-[#fbbf24] bg-[#fbbf24]/10 p-2 rounded border border-[#fbbf24]/30">
                       Web Serial API not supported. Use Chrome, Edge, or Opera.
                     </div>
                   )}
                   {connectionStatus === 'connected' ? (
-                    <button onClick={disconnectFromArduino} className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex items-center justify-center space-x-2 transition-colors">
-                      <Unplug className="h-4 w-4" /><span>Disconnect</span>
+                    <button 
+                      onClick={disconnectFromArduino} 
+                      className="w-full px-3 py-2 bg-[#ef4444] hover:bg-[#dc2626] text-white rounded text-sm font-bold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Unplug className="h-4 w-4" />
+                      <span>DISCONNECT</span>
                     </button>
                   ) : (
-                    <button onClick={connectToArduino} disabled={connectionStatus === 'connecting' || !('serial' in navigator)} className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center justify-center space-x-2 disabled:opacity-60 transition-colors">
-                      <Cable className="h-4 w-4" /><span>{connectionStatus === 'connecting' ? 'Connecting...' : 'Connect USB'}</span>
+                    <button 
+                      onClick={connectToArduino} 
+                      disabled={connectionStatus === 'connecting' || !('serial' in navigator)} 
+                      className="w-full px-3 py-2 bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] rounded text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+                    >
+                      <Cable className="h-4 w-4" />
+                      <span>{connectionStatus === 'connecting' ? 'CONNECTING...' : 'CONNECT USB'}</span>
                     </button>
                   )}
                   {lastSensorData && (
-                    <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg text-xs text-gray-600 dark:text-slate-300">
-                      <div className="font-semibold mb-1">Last Sensor Data:</div>
+                    <div className="mt-2 p-2 bg-[#1e3a5f] rounded text-xs text-[#6b7280]">
+                      <div className="font-bold mb-1 text-[#00d4ff]">LAST SENSOR DATA:</div>
                       ULD: {lastSensorData.uldPosition} | Lock: {lockPositions[lastSensorData.lockIndex]} | {lastSensorData.engaged ? 'Engaged' : 'Disengaged'}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Ground Operator Access */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3 flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-blue-500" />
-                  Ground Operator Access
+              {/* Ground Operator Access - QR Code */}
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  GROUND OPERATOR ACCESS
                   {viewerCount > 0 && (
-                    <span className="ml-auto flex items-center gap-1 text-xs font-normal text-green-600 dark:text-green-400">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      {viewerCount} viewer{viewerCount !== 1 ? 's' : ''}
+                    <span className="ml-auto flex items-center gap-1 text-xs font-normal text-[#22c55e]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                      {viewerCount} VIEWER{viewerCount !== 1 ? 'S' : ''}
                     </span>
                   )}
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-center p-3 bg-white dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600">
-                    <QRCodeSVG value={viewerURL} size={140} level="M" />
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-center p-3 bg-white rounded">
+                    <QRCodeSVG value={viewerURL} size={120} level="M" />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 text-center">
-                    Scan to view live dashboard
+                  <p className="text-xs text-[#6b7280] text-center">
+                    Scan with phone to view live status
                   </p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 px-2 py-1.5 bg-gray-50 dark:bg-slate-700 rounded text-xs text-gray-600 dark:text-slate-300 truncate border border-gray-200 dark:border-slate-600 select-all">
+                    <div className="flex-1 px-2 py-1.5 bg-[#1e3a5f] rounded text-xs text-[#6b7280] truncate border border-[#2d4a6f] select-all">
                       {viewerURL}
                     </div>
                     <button
                       onClick={copyViewerLink}
-                      className="shrink-0 p-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      className="shrink-0 p-1.5 rounded bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] transition-colors"
                       title="Copy link"
                     >
                       {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                   {linkCopied && (
-                    <p className="text-xs text-green-600 dark:text-green-400 text-center">Link copied!</p>
+                    <p className="text-xs text-[#22c55e] text-center">Link copied!</p>
                   )}
                   {!socketConnected && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
-                      Relay server not connected. Run: node server.js
+                    <p className="text-xs text-[#fbbf24] text-center">
+                      Relay server offline. Run: node server.js
                     </p>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* Main Content - Cargo Grid */}
             <div className="lg:col-span-3">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Cargo Deck Status</h2>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-slate-400">
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#10B981' }}></div><span>Engaged</span></div>
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#F59E0B' }}></div><span>Partial</span></div>
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#EF4444' }}></div><span>Disengaged</span></div>
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center justify-between">
+                  <span>CARGO DECK STATUS</span>
+                  <div className="flex items-center gap-4 text-xs font-normal">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#22c55e]"></div>
+                      <span className="text-[#6b7280]">ENGAGED</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#fbbf24]"></div>
+                      <span className="text-[#6b7280]">PARTIAL</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#ef4444]"></div>
+                      <span className="text-[#6b7280]">DISENGAGED</span>
+                    </div>
                   </div>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 pointer-events-none opacity-5 dark:opacity-10">
-                    <svg className="w-full h-full" viewBox="0 0 800 200">
-                      <path d="M 50 100 Q 50 70 80 70 L 720 70 Q 750 70 750 100 Q 750 130 720 130 L 80 130 Q 50 130 50 100 Z" stroke="#374151" strokeWidth="3" fill="none" />
-                    </svg>
-                  </div>
-                  <div className="relative z-10 space-y-3 p-4">
-                    {layout.positions.map((row, rowIndex) => (
-                      <div key={`row-${rowIndex}`} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${layout.gridCols}, 1fr)` }}>
-                        {row.map((position, colIndex) => {
-                          if (!position) return <div key={`empty-${colIndex}`} className="min-h-20"></div>;
-                          const status = uldStatuses[position];
-                          if (!status) return null;
-                          const colors = getStatusColor(status.overallStatus);
-                          const hasSensor = lastSensorData && position === lastSensorData.uldPosition;
-                          const isAlert = status.overallStatus !== 'engaged';
-                          return (
-                            <div
-                              key={position}
-                              className={`relative border-2 rounded-lg p-3 min-h-20 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-lg ${isAlert ? 'animate-pulse-alert' : ''}`}
-                              style={{ backgroundColor: colors.bg + '20', borderColor: colors.border }}
-                              onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
-                            >
-                              {hasSensor && <div className="absolute top-1 right-1"><Radio className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>}
-                              <div className="font-bold text-base" style={{ color: colors.text }}>{position}</div>
-                              <div className="flex items-center mt-1">
-                                {status.overallStatus === 'engaged'
-                                  ? <CheckCircle className="h-4 w-4" style={{ color: colors.border }} />
-                                  : <AlertTriangle className="h-4 w-4" style={{ color: colors.border }} />}
+                <div className="p-6">
+                  {/* Aircraft outline */}
+                  <div className="relative">
+                    <div className="absolute inset-0 pointer-events-none opacity-10">
+                      <svg className="w-full h-full" viewBox="0 0 800 200">
+                        <path d="M 50 100 Q 50 70 80 70 L 720 70 Q 750 70 750 100 Q 750 130 720 130 L 80 130 Q 50 130 50 100 Z" stroke="#00d4ff" strokeWidth="2" fill="none" />
+                      </svg>
+                    </div>
+                    <div className="relative z-10 space-y-3 p-4">
+                      {layout.positions.map((row, rowIndex) => (
+                        <div key={`row-${rowIndex}`} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${layout.gridCols}, 1fr)` }}>
+                          {row.map((position, colIndex) => {
+                            if (!position) return <div key={`empty-${colIndex}`} className="min-h-16"></div>;
+                            const status = uldStatuses[position];
+                            if (!status) return null;
+                            const colors = getStatusColor(status.overallStatus);
+                            const hasSensor = lastSensorData && position === lastSensorData.uldPosition;
+                            const isAlert = status.overallStatus !== 'engaged';
+                            return (
+                              <div
+                                key={position}
+                                className={`relative border rounded p-2 min-h-16 flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 ${isAlert ? 'animate-pulse-alert' : ''}`}
+                                style={{ 
+                                  backgroundColor: colors.bg + '15', 
+                                  borderColor: colors.border,
+                                  boxShadow: isAlert ? `0 0 10px ${colors.bg}40` : 'none'
+                                }}
+                                onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
+                              >
+                                {hasSensor && (
+                                  <div className="absolute top-1 right-1">
+                                    <Radio className="h-3 w-3 text-[#00d4ff]" />
+                                  </div>
+                                )}
+                                <div className="font-bold text-sm" style={{ color: colors.text }}>{position}</div>
+                                <div className="flex items-center mt-1">
+                                  {status.overallStatus === 'engaged'
+                                    ? <CheckCircle className="h-4 w-4" style={{ color: colors.border }} />
+                                    : <AlertTriangle className="h-4 w-4" style={{ color: colors.border }} />}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex justify-between text-sm text-gray-400 dark:text-slate-500 px-4">
-                    <span>AFT</span><span>FORWARD</span>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex justify-between text-xs text-[#6b7280] px-4 tracking-wider">
+                      <span>AFT</span>
+                      <span>FORWARD</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -512,49 +586,62 @@ const LockDetectionSystem = () => {
     const status = uldStatuses[selectedULD];
     if (!status) return null;
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center space-x-4">
-            <button onClick={() => setCurrentView('monitoring')} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-              <ArrowLeft className="h-6 w-6" />
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            <button onClick={() => setCurrentView('monitoring')} className="text-[#6b7280] hover:text-[#00d4ff] transition-colors">
+              <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">ULD {selectedULD} — Lock Details</h1>
-              <p className="text-sm text-gray-500 dark:text-slate-400">Individual Lock Status</p>
+              <h1 className="text-lg font-bold text-white tracking-wide">ULD {selectedULD} - LOCK DETAILS</h1>
+              <p className="text-xs text-[#6b7280] tracking-wider">INDIVIDUAL LOCK STATUS</p>
             </div>
           </div>
         </div>
         <div className="max-w-4xl mx-auto p-6">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-            <div className="grid grid-cols-2 gap-6">
-              {status.locks.map((lock, index) => {
-                const isActiveSensor = lastSensorData && selectedULD === lastSensorData.uldPosition && index === lastSensorData.lockIndex;
-                const colors = getStatusColor(lock.engaged ? 'engaged' : 'disengaged');
-                return (
-                  <div
-                    key={index}
-                    className={`p-6 rounded-xl border-2 transition-all ${isActiveSensor ? 'ring-4 ring-blue-400 dark:ring-blue-500' : ''} ${!lock.engaged ? 'animate-pulse-alert' : ''}`}
-                    style={{ backgroundColor: colors.bg + '15', borderColor: colors.border }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-slate-100">{lock.position}</h3>
-                      {isActiveSensor && <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 text-sm font-medium"><Radio className="h-4 w-4" /><span>Sensor</span></div>}
-                    </div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      {lock.engaged ? <CheckCircle className="h-8 w-8" style={{ color: colors.border }} /> : <AlertTriangle className="h-8 w-8" style={{ color: colors.border }} />}
-                      <div>
-                        <div className="font-semibold text-xl" style={{ color: colors.text }}>{lock.engaged ? 'ENGAGED' : 'DISENGAGED'}</div>
-                        <div className="text-sm text-gray-500 dark:text-slate-400">Status: {lock.engaged ? '1' : '0'}</div>
+          <div className="avion-panel">
+            <div className="avion-panel-header">LOCK POSITIONS</div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4">
+                {status.locks.map((lock, index) => {
+                  const isActiveSensor = lastSensorData && selectedULD === lastSensorData.uldPosition && index === lastSensorData.lockIndex;
+                  const colors = getStatusColor(lock.engaged ? 'engaged' : 'disengaged');
+                  return (
+                    <div
+                      key={index}
+                      className={`p-5 rounded border transition-all ${isActiveSensor ? 'ring-2 ring-[#00d4ff]' : ''} ${!lock.engaged ? 'animate-pulse-alert' : ''}`}
+                      style={{ backgroundColor: colors.bg + '10', borderColor: colors.border }}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-white">{lock.position}</h3>
+                        {isActiveSensor && (
+                          <div className="flex items-center gap-1 text-[#00d4ff] text-xs font-medium">
+                            <Radio className="h-3 w-3" />
+                            <span>SENSOR</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        {lock.engaged
+                          ? <CheckCircle className="h-8 w-8" style={{ color: colors.border }} />
+                          : <AlertTriangle className="h-8 w-8" style={{ color: colors.border }} />}
+                        <div>
+                          <div className="font-bold text-lg" style={{ color: colors.text }}>
+                            {lock.engaged ? 'ENGAGED' : 'DISENGAGED'}
+                          </div>
+                          <div className="text-xs text-[#6b7280]">VALUE: {lock.engaged ? '1' : '0'}</div>
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-[#1e3a5f]">
+                        <div className="flex items-center text-xs text-[#6b7280]">
+                          <Clock className="h-3 w-3 mr-2" />
+                          LAST CHECK: {lock.lastCheck.toLocaleTimeString()}
+                        </div>
                       </div>
                     </div>
-                    <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
-                      <div className="flex items-center text-sm text-gray-500 dark:text-slate-400">
-                        <Clock className="h-4 w-4 mr-2" />Last Check: {lock.lastCheck.toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -584,59 +671,74 @@ const LockDetectionSystem = () => {
     const d = flightStartTime ? new Date() - flightStartTime : 0;
     const hours = Math.floor(d / 3600000), minutes = Math.floor((d % 3600000) / 60000);
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => setCurrentView('monitoring')} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"><ArrowLeft className="h-6 w-6" /></button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => setCurrentView('monitoring')} className="text-[#6b7280] hover:text-[#00d4ff] transition-colors">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Flight Report</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400">Lock Engagement History (USB Serial)</p>
+                <h1 className="text-lg font-bold text-white tracking-wide">FLIGHT REPORT</h1>
+                <p className="text-xs text-[#6b7280] tracking-wider">LOCK ENGAGEMENT HISTORY - USB SERIAL</p>
               </div>
             </div>
-            <button onClick={exportReport} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-              <Download className="h-4 w-4" /><span>Export CSV</span>
+            <button onClick={exportReport} className="flex items-center gap-2 px-4 py-2 bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] rounded text-xs font-bold transition-colors">
+              <Download className="h-4 w-4" />
+              <span>EXPORT CSV</span>
             </button>
           </div>
         </div>
+
         <div className="max-w-6xl mx-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
-              { label: 'Flight Duration', value: `${hours}h ${minutes}m`, color: 'text-gray-900 dark:text-slate-100' },
-              { label: 'Total Events',    value: flightLog.length,        color: 'text-gray-900 dark:text-slate-100' },
-              { label: 'Engagements',     value: engagementCount,         color: 'text-green-600 dark:text-green-400' },
-              { label: 'Disengagements',  value: disengagementCount,      color: 'text-red-600 dark:text-red-400' },
+              { label: 'FLIGHT DURATION', value: `${hours}h ${minutes}m`, color: 'text-white' },
+              { label: 'TOTAL EVENTS', value: flightLog.length, color: 'text-white' },
+              { label: 'ENGAGEMENTS', value: engagementCount, color: 'text-[#22c55e]' },
+              { label: 'DISENGAGEMENTS', value: disengagementCount, color: 'text-[#ef4444]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <div className="text-sm text-gray-500 dark:text-slate-400 mb-1">{label}</div>
-                <div className={`text-2xl font-bold ${color}`}>{value}</div>
+              <div key={label} className="avion-panel">
+                <div className="p-4">
+                  <div className="text-xs text-[#6b7280] mb-1 tracking-wider">{label}</div>
+                  <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                </div>
               </div>
             ))}
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
-            <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Event Timeline</h2>
-            </div>
+
+          {/* Event Timeline */}
+          <div className="avion-panel">
+            <div className="avion-panel-header">EVENT TIMELINE</div>
             <div className="overflow-auto max-h-96">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                <thead className="bg-gray-50 dark:bg-slate-700 sticky top-0">
-                  <tr>{['Timestamp', 'ULD Position', 'Lock Position', 'Event', 'Value'].map(h => (
-                    <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
-                  ))}</tr>
+              <table className="min-w-full">
+                <thead className="bg-[#1e3a5f] sticky top-0">
+                  <tr>
+                    {['TIMESTAMP', 'ULD POSITION', 'LOCK POSITION', 'EVENT', 'VALUE'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-[#00d4ff] tracking-wider">{h}</th>
+                    ))}
+                  </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                <tbody className="divide-y divide-[#1e3a5f]">
                   {flightLog.length === 0 ? (
-                    <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400 dark:text-slate-500">No events recorded</td></tr>
+                    <tr><td colSpan="5" className="px-4 py-12 text-center text-[#6b7280]">No events recorded</td></tr>
                   ) : (
                     flightLog.slice().reverse().map((log, i) => (
-                      <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{log.timestamp.toLocaleTimeString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-200">{log.uldPosition}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{log.lockPosition}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${log.event === 'ENGAGED' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>{log.event}</span>
+                      <tr key={i} className="hover:bg-[#1e3a5f]/30 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-[#6b7280]">{log.timestamp.toLocaleTimeString()}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-white">{log.uldPosition}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-[#6b7280]">{log.lockPosition}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-bold rounded ${
+                            log.event === 'ENGAGED' 
+                              ? 'bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30' 
+                              : 'bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30'
+                          }`}>
+                            {log.event}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{log.value}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-white">{log.value}</td>
                       </tr>
                     ))
                   )}

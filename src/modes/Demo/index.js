@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Plane, AlertTriangle, CheckCircle, Radio, Clock, ArrowLeft, FileText, Download } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plane, AlertTriangle, CheckCircle, Radio, Clock, ArrowLeft, FileText, Download, Users, Link2, Check } from 'lucide-react';
+import { io } from 'socket.io-client';
+import { QRCodeSVG } from 'qrcode.react';
+
+const SOCKET_URL = process.env.NODE_ENV === 'production'
+  ? '' : `http://${window.location.hostname}:3001`;
 
 const playAlertBeep = () => {
   try {
@@ -20,7 +25,7 @@ const playAlertBeep = () => {
 const LockDetectionSystem = () => {
   const positionLayouts = {
     sideBySide: {
-      name: 'Side by Side (L/R)',
+      name: 'SIDE BY SIDE (L/R)',
       positions: [
         ['AR', 'BR', 'CR', 'DR', 'ER', 'FR', 'GR', 'HR', 'JR', 'KR', 'LR', 'MR', 'NR', 'PR'],
         ['AL', 'BL', 'CL', 'DL', 'EL', 'FL', 'GL', 'HL', 'JL', 'KL', 'LL', 'ML', 'NL', 'PL']
@@ -29,7 +34,7 @@ const LockDetectionSystem = () => {
       description: 'Left and Right side positions for PMC/PAG pallets'
     },
     centerLoad: {
-      name: 'Center Load',
+      name: 'CENTER LOAD',
       positions: [
         ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P']
       ],
@@ -37,7 +42,7 @@ const LockDetectionSystem = () => {
       description: 'Single center positions for PMC pallets'
     },
     lowerDeck: {
-      name: 'Lower Deck',
+      name: 'LOWER DECK',
       positions: [
         ['AR', 'BR', 'CDR', 'EF', 'GH', 'JK', 'LMR', 'NPR'],
         ['AL', 'BL', 'CDL', '', '', '', 'LML', 'NPL']
@@ -60,7 +65,65 @@ const LockDetectionSystem = () => {
     engaged: true
   });
 
+  // Socket.io state for web sharing
+  const socketRef = useRef(null);
+  const [viewerCount, setViewerCount] = useState(0);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [viewerURL, setViewerURL] = useState(`${window.location.origin}?mode=viewer`);
+  const [socketConnected, setSocketConnected] = useState(false);
+
   const lockPositions = ['Forward Left', 'Forward Right', 'Aft Left', 'Aft Right'];
+
+  // Connect to relay server for ground operator broadcasting
+  useEffect(() => {
+    const socket = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
+    socketRef.current = socket;
+    socket.on('connect', () => {
+      socket.emit('register-master');
+      setSocketConnected(true);
+    });
+    socket.on('disconnect', () => setSocketConnected(false));
+    socket.on('viewer-count', (count) => setViewerCount(count));
+    socket.on('server-info', ({ ip, port }) => {
+      const p = window.location.port ? `:${window.location.port}` : '';
+      setViewerURL(`http://${ip}${p}?mode=viewer`);
+    });
+    return () => socket.disconnect();
+  }, []);
+
+  // Broadcast state to ground operators
+  useEffect(() => {
+    if (!socketConnected || !selectedLayout) return;
+    const serializedStatuses = {};
+    for (const [key, value] of Object.entries(uldStatuses)) {
+      serializedStatuses[key] = {
+        ...value,
+        locks: value.locks.map(lock => ({
+          ...lock,
+          lastCheck: lock.lastCheck instanceof Date ? lock.lastCheck.toISOString() : lock.lastCheck
+        }))
+      };
+    }
+    socketRef.current.emit('state-update', {
+      selectedLayout,
+      layoutConfig: positionLayouts[selectedLayout],
+      uldStatuses: serializedStatuses,
+      flightLog: flightLog.map(l => ({
+        ...l,
+        timestamp: l.timestamp instanceof Date ? l.timestamp.toISOString() : l.timestamp
+      })),
+      flightStartTime: flightStartTime instanceof Date ? flightStartTime.toISOString() : flightStartTime,
+      connectionStatus: sensorConnected ? 'connected' : 'disconnected',
+      lastSensorData: sensorState,
+    });
+  }, [socketConnected, uldStatuses, flightLog, sensorConnected, sensorState, selectedLayout, flightStartTime]);
+
+  const copyViewerLink = () => {
+    navigator.clipboard.writeText(viewerURL).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  };
 
   const initializeULDs = (layout) => {
     const initialStatuses = {};
@@ -95,10 +158,10 @@ const LockDetectionSystem = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'engaged':    return { bg: '#10B981', border: '#059669', text: '#065F46' };
-      case 'partial':    return { bg: '#F59E0B', border: '#D97706', text: '#92400E' };
-      case 'disengaged': return { bg: '#EF4444', border: '#DC2626', text: '#991B1B' };
-      default:           return { bg: '#6B7280', border: '#4B5563', text: '#1F2937' };
+      case 'engaged':    return { bg: '#22c55e', border: '#16a34a', text: '#22c55e' };
+      case 'partial':    return { bg: '#fbbf24', border: '#d97706', text: '#fbbf24' };
+      case 'disengaged': return { bg: '#ef4444', border: '#dc2626', text: '#ef4444' };
+      default:           return { bg: '#6b7280', border: '#4b5563', text: '#6b7280' };
     }
   };
 
@@ -131,32 +194,50 @@ const LockDetectionSystem = () => {
   };
 
   const ConfigurationView = () => (
-    <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900 p-6">
+    <div className="animate-fadeIn min-h-screen bg-[#0a0f1a] p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-8 mb-6 border border-gray-100 dark:border-slate-700">
-          <div className="flex items-center space-x-3 mb-2">
-            <Plane className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Boeing 777F Lock Detection System</h1>
-              <p className="text-gray-500 dark:text-slate-400">Demo Mode — Select Aircraft Configuration</p>
+        {/* Header Panel */}
+        <div className="avion-panel mb-6">
+          <div className="avion-panel-header">SYSTEM CONFIGURATION</div>
+          <div className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-[#1e3a5f] rounded flex items-center justify-center">
+                <Plane className="h-6 w-6 text-[#00d4ff]" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-wide">BOEING 777F LOCK DETECTION</h1>
+                <p className="text-[#6b7280] text-sm tracking-wider">DEMO MODE - SIMULATION ENVIRONMENT</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#fbbf24] bg-[#1e3a5f]/50 px-3 py-2 rounded">
+              <AlertTriangle className="h-4 w-4" />
+              <span>DEMO MODE: Simulated sensor data for testing and demonstration</span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {Object.entries(positionLayouts).map(([key, config]) => (
-            <div
-              key={key}
-              onClick={() => startMonitoring(key)}
-              className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border-2 border-gray-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-lg cursor-pointer transition-all duration-200"
-            >
-              <h3 className="font-bold text-lg text-gray-900 dark:text-slate-100 mb-2">{config.name}</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">{config.description}</p>
-              <div className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                {config.positions.flat().filter(p => p).length} positions
-              </div>
+        {/* Layout Selection */}
+        <div className="avion-panel">
+          <div className="avion-panel-header">SELECT AIRCRAFT CONFIGURATION</div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Object.entries(positionLayouts).map(([key, config]) => (
+                <button
+                  key={key}
+                  onClick={() => startMonitoring(key)}
+                  className="bg-[#1e3a5f]/50 p-5 rounded border border-[#2d4a6f] hover:border-[#00d4ff] hover:bg-[#1e3a5f] transition-all text-left group"
+                >
+                  <h3 className="font-bold text-white mb-2 tracking-wide group-hover:text-[#00d4ff] transition-colors">
+                    {config.name}
+                  </h3>
+                  <p className="text-xs text-[#6b7280] mb-3">{config.description}</p>
+                  <div className="text-[#00d4ff] font-bold text-sm">
+                    {config.positions.flat().filter(p => p).length} POSITIONS
+                  </div>
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
@@ -165,33 +246,52 @@ const LockDetectionSystem = () => {
   const MonitoringView = () => {
     const layout = positionLayouts[selectedLayout];
     const activeAlerts = Object.entries(uldStatuses).filter(([_, status]) => status.overallStatus !== 'engaged');
+    const allPositions = layout.positions.flat().filter(p => p);
+    const engagedCount = Object.values(uldStatuses).filter(s => s.overallStatus === 'engaged').length;
 
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        {/* Status Bar */}
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => setCurrentView('configuration')} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-                <ArrowLeft className="h-6 w-6" />
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setCurrentView('configuration')} 
+                className="text-[#6b7280] hover:text-[#00d4ff] transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Lock Status Monitor</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400">{layout.name}</p>
+                <h1 className="text-lg font-bold text-white tracking-wide">LOCK STATUS MONITOR</h1>
+                <p className="text-xs text-[#6b7280] tracking-wider">{layout.name} - DEMO MODE</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-100 dark:bg-slate-700 rounded-lg">
-                <div className={`w-2 h-2 rounded-full ${sensorConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                  {sensorConnected ? 'Sensor Active' : 'No Connection'}
-                </span>
+            <div className="flex items-center gap-4">
+              {/* Status Summary */}
+              <div className="flex items-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#22c55e]"></div>
+                  <span className="text-[#22c55e] font-bold">{engagedCount}</span>
+                  <span className="text-[#6b7280]">SECURE</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#ef4444]"></div>
+                  <span className="text-[#ef4444] font-bold">{activeAlerts.length}</span>
+                  <span className="text-[#6b7280]">ALERT</span>
+                </div>
+              </div>
+              <div className="w-px h-6 bg-[#1e3a5f]"></div>
+              {/* Demo Indicator */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e3a5f] rounded">
+                <div className={`w-2 h-2 rounded-full ${sensorConnected ? 'bg-[#22c55e]' : 'bg-[#ef4444]'}`}></div>
+                <span className="text-xs font-bold text-[#6b7280]">DEMO ACTIVE</span>
               </div>
               <button
                 onClick={() => setCurrentView('report')}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] rounded text-xs font-bold transition-colors"
               >
                 <FileText className="h-4 w-4" />
-                <span>Flight Report</span>
+                <span>REPORT</span>
               </button>
             </div>
           </div>
@@ -199,104 +299,173 @@ const LockDetectionSystem = () => {
 
         <div className="max-w-7xl mx-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Left Sidebar */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-red-500" />
-                  Active Alerts
-                </h2>
-                {activeAlerts.length === 0 ? (
-                  <div className="text-center py-6">
-                    <CheckCircle className="h-10 w-10 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-slate-400">All Locks Secured</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {activeAlerts.map(([position, status]) => (
-                      <div
-                        key={position}
-                        className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 animate-pulse-alert transition-colors"
-                        onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
-                      >
-                        <div className="font-semibold text-red-900 dark:text-red-300">ULD {position}</div>
-                        <div className="text-sm text-red-700 dark:text-red-400">
-                          {status.overallStatus === 'partial' ? 'Partial Lock Failure' : 'All Locks Disengaged'}
+              {/* Alerts Panel */}
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  ACTIVE ALERTS
+                </div>
+                <div className="p-4">
+                  {activeAlerts.length === 0 ? (
+                    <div className="text-center py-6">
+                      <CheckCircle className="h-10 w-10 text-[#22c55e] mx-auto mb-2" />
+                      <p className="text-xs text-[#22c55e] font-bold">ALL LOCKS SECURE</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {activeAlerts.map(([position, status]) => (
+                        <div
+                          key={position}
+                          className="p-3 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded cursor-pointer hover:bg-[#ef4444]/20 animate-pulse-alert transition-colors"
+                          onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
+                        >
+                          <div className="font-bold text-[#ef4444] text-sm">ULD {position}</div>
+                          <div className="text-xs text-[#ef4444]/70">
+                            {status.overallStatus === 'partial' ? 'PARTIAL LOCK FAILURE' : 'ALL LOCKS DISENGAGED'}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Sensor Test</h3>
-                <div className="space-y-2">
-                  <div className="text-xs text-gray-500 dark:text-slate-400">
-                    Active: ULD {sensorState.uldPosition} — {lockPositions[sensorState.lockIndex]}
+              {/* Sensor Test Panel */}
+              <div className="avion-panel">
+                <div className="avion-panel-header">SENSOR SIMULATION</div>
+                <div className="p-4 space-y-3">
+                  <div className="text-xs text-[#6b7280]">
+                    <span className="text-[#00d4ff]">ACTIVE:</span> ULD {sensorState.uldPosition} - {lockPositions[sensorState.lockIndex]}
                   </div>
                   <button
                     onClick={toggleSensor}
-                    className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`w-full px-3 py-3 rounded text-sm font-bold transition-all ${
                       sensorState.engaged
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : 'bg-red-600 hover:bg-red-700 text-white'
+                        ? 'bg-[#22c55e] hover:bg-[#16a34a] text-[#0a0f1a] shadow-[0_0_10px_rgba(34,197,94,0.3)]'
+                        : 'bg-[#ef4444] hover:bg-[#dc2626] text-white shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse-alert'
                     }`}
                   >
-                    {sensorState.engaged ? 'Engaged (1)' : 'Disengaged (0)'}
+                    {sensorState.engaged ? 'ENGAGED (1)' : 'DISENGAGED (0)'}
                   </button>
+                  <p className="text-xs text-[#6b7280] text-center">Click to toggle lock state</p>
+                </div>
+              </div>
+
+              {/* Ground Operator Access - QR Code */}
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  GROUND OPERATOR ACCESS
+                  {viewerCount > 0 && (
+                    <span className="ml-auto flex items-center gap-1 text-xs font-normal text-[#22c55e]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                      {viewerCount} VIEWER{viewerCount !== 1 ? 'S' : ''}
+                    </span>
+                  )}
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex justify-center p-3 bg-white rounded">
+                    <QRCodeSVG value={viewerURL} size={120} level="M" />
+                  </div>
+                  <p className="text-xs text-[#6b7280] text-center">
+                    Scan with phone to view live status
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 px-2 py-1.5 bg-[#1e3a5f] rounded text-xs text-[#6b7280] truncate border border-[#2d4a6f] select-all">
+                      {viewerURL}
+                    </div>
+                    <button
+                      onClick={copyViewerLink}
+                      className="shrink-0 p-1.5 rounded bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] transition-colors"
+                      title="Copy link"
+                    >
+                      {linkCopied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  {linkCopied && (
+                    <p className="text-xs text-[#22c55e] text-center">Link copied!</p>
+                  )}
+                  {!socketConnected && (
+                    <p className="text-xs text-[#fbbf24] text-center">
+                      Relay server offline. Run: node server.js
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
+            {/* Main Content - Cargo Grid */}
             <div className="lg:col-span-3">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Cargo Deck Status</h2>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-slate-400">
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#10B981' }}></div><span>Engaged</span></div>
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#F59E0B' }}></div><span>Partial</span></div>
-                    <div className="flex items-center space-x-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: '#EF4444' }}></div><span>Disengaged</span></div>
+              <div className="avion-panel">
+                <div className="avion-panel-header flex items-center justify-between">
+                  <span>CARGO DECK STATUS</span>
+                  <div className="flex items-center gap-4 text-xs font-normal">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#22c55e]"></div>
+                      <span className="text-[#6b7280]">ENGAGED</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#fbbf24]"></div>
+                      <span className="text-[#6b7280]">PARTIAL</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded bg-[#ef4444]"></div>
+                      <span className="text-[#6b7280]">DISENGAGED</span>
+                    </div>
                   </div>
                 </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 pointer-events-none opacity-5 dark:opacity-10">
-                    <svg className="w-full h-full" viewBox="0 0 800 200">
-                      <path d="M 50 100 Q 50 70 80 70 L 720 70 Q 750 70 750 100 Q 750 130 720 130 L 80 130 Q 50 130 50 100 Z" stroke="#374151" strokeWidth="3" fill="none" />
-                    </svg>
-                  </div>
-                  <div className="relative z-10 space-y-3 p-4">
-                    {layout.positions.map((row, rowIndex) => (
-                      <div key={`row-${rowIndex}`} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${layout.gridCols}, 1fr)` }}>
-                        {row.map((position, colIndex) => {
-                          if (!position) return <div key={`empty-${colIndex}`} className="min-h-20"></div>;
-                          const status = uldStatuses[position];
-                          if (!status) return null;
-                          const colors = getStatusColor(status.overallStatus);
-                          const hasSensor = position === sensorState.uldPosition;
-                          const isAlert = status.overallStatus !== 'engaged';
-                          return (
-                            <div
-                              key={position}
-                              className={`relative border-2 rounded-lg p-3 min-h-20 flex flex-col items-center justify-center cursor-pointer transition-all hover:shadow-lg ${isAlert ? 'animate-pulse-alert' : ''}`}
-                              style={{ backgroundColor: colors.bg + '20', borderColor: colors.border }}
-                              onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
-                            >
-                              {hasSensor && <div className="absolute top-1 right-1"><Radio className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>}
-                              <div className="font-bold text-base" style={{ color: colors.text }}>{position}</div>
-                              <div className="flex items-center space-x-1 mt-1">
-                                {status.overallStatus === 'engaged'
-                                  ? <CheckCircle className="h-4 w-4" style={{ color: colors.border }} />
-                                  : <AlertTriangle className="h-4 w-4" style={{ color: colors.border }} />}
+                <div className="p-6">
+                  {/* Aircraft outline */}
+                  <div className="relative">
+                    <div className="absolute inset-0 pointer-events-none opacity-10">
+                      <svg className="w-full h-full" viewBox="0 0 800 200">
+                        <path d="M 50 100 Q 50 70 80 70 L 720 70 Q 750 70 750 100 Q 750 130 720 130 L 80 130 Q 50 130 50 100 Z" stroke="#00d4ff" strokeWidth="2" fill="none" />
+                      </svg>
+                    </div>
+                    <div className="relative z-10 space-y-3 p-4">
+                      {layout.positions.map((row, rowIndex) => (
+                        <div key={`row-${rowIndex}`} className="grid gap-2" style={{ gridTemplateColumns: `repeat(${layout.gridCols}, 1fr)` }}>
+                          {row.map((position, colIndex) => {
+                            if (!position) return <div key={`empty-${colIndex}`} className="min-h-16"></div>;
+                            const status = uldStatuses[position];
+                            if (!status) return null;
+                            const colors = getStatusColor(status.overallStatus);
+                            const hasSensor = position === sensorState.uldPosition;
+                            const isAlert = status.overallStatus !== 'engaged';
+                            return (
+                              <div
+                                key={position}
+                                className={`relative border rounded p-2 min-h-16 flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 ${isAlert ? 'animate-pulse-alert' : ''}`}
+                                style={{ 
+                                  backgroundColor: colors.bg + '15', 
+                                  borderColor: colors.border,
+                                  boxShadow: isAlert ? `0 0 10px ${colors.bg}40` : 'none'
+                                }}
+                                onClick={() => { setSelectedULD(position); setCurrentView('detail'); }}
+                              >
+                                {hasSensor && (
+                                  <div className="absolute top-1 right-1">
+                                    <Radio className="h-3 w-3 text-[#00d4ff]" />
+                                  </div>
+                                )}
+                                <div className="font-bold text-sm" style={{ color: colors.text }}>{position}</div>
+                                <div className="flex items-center mt-1">
+                                  {status.overallStatus === 'engaged'
+                                    ? <CheckCircle className="h-4 w-4" style={{ color: colors.border }} />
+                                    : <AlertTriangle className="h-4 w-4" style={{ color: colors.border }} />}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex justify-between text-sm text-gray-400 dark:text-slate-500 px-4">
-                    <span>AFT</span><span>FORWARD</span>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex justify-between text-xs text-[#6b7280] px-4 tracking-wider">
+                      <span>AFT</span>
+                      <span>FORWARD</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -311,57 +480,62 @@ const LockDetectionSystem = () => {
     const status = uldStatuses[selectedULD];
     if (!status) return null;
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center space-x-4">
-            <button onClick={() => setCurrentView('monitoring')} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-              <ArrowLeft className="h-6 w-6" />
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
+          <div className="max-w-4xl mx-auto flex items-center gap-4">
+            <button onClick={() => setCurrentView('monitoring')} className="text-[#6b7280] hover:text-[#00d4ff] transition-colors">
+              <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">ULD {selectedULD} — Lock Details</h1>
-              <p className="text-sm text-gray-500 dark:text-slate-400">Individual Lock Status</p>
+              <h1 className="text-lg font-bold text-white tracking-wide">ULD {selectedULD} - LOCK DETAILS</h1>
+              <p className="text-xs text-[#6b7280] tracking-wider">INDIVIDUAL LOCK STATUS</p>
             </div>
           </div>
         </div>
         <div className="max-w-4xl mx-auto p-6">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
-            <div className="grid grid-cols-2 gap-6">
-              {status.locks.map((lock, index) => {
-                const isActiveSensor = selectedULD === sensorState.uldPosition && index === sensorState.lockIndex;
-                const colors = getStatusColor(lock.engaged ? 'engaged' : 'disengaged');
-                return (
-                  <div
-                    key={index}
-                    className={`p-6 rounded-xl border-2 transition-all ${isActiveSensor ? 'ring-4 ring-blue-400 dark:ring-blue-500' : ''} ${!lock.engaged ? 'animate-pulse-alert' : ''}`}
-                    style={{ backgroundColor: colors.bg + '15', borderColor: colors.border }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-slate-100">{lock.position}</h3>
-                      {isActiveSensor && (
-                        <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 text-sm font-medium">
-                          <Radio className="h-4 w-4" /><span>Sensor</span>
+          <div className="avion-panel">
+            <div className="avion-panel-header">LOCK POSITIONS</div>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4">
+                {status.locks.map((lock, index) => {
+                  const isActiveSensor = selectedULD === sensorState.uldPosition && index === sensorState.lockIndex;
+                  const colors = getStatusColor(lock.engaged ? 'engaged' : 'disengaged');
+                  return (
+                    <div
+                      key={index}
+                      className={`p-5 rounded border transition-all ${isActiveSensor ? 'ring-2 ring-[#00d4ff]' : ''} ${!lock.engaged ? 'animate-pulse-alert' : ''}`}
+                      style={{ backgroundColor: colors.bg + '10', borderColor: colors.border }}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-bold text-white">{lock.position}</h3>
+                        {isActiveSensor && (
+                          <div className="flex items-center gap-1 text-[#00d4ff] text-xs font-medium">
+                            <Radio className="h-3 w-3" />
+                            <span>SENSOR</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mb-4">
+                        {lock.engaged
+                          ? <CheckCircle className="h-8 w-8" style={{ color: colors.border }} />
+                          : <AlertTriangle className="h-8 w-8" style={{ color: colors.border }} />}
+                        <div>
+                          <div className="font-bold text-lg" style={{ color: colors.text }}>
+                            {lock.engaged ? 'ENGAGED' : 'DISENGAGED'}
+                          </div>
+                          <div className="text-xs text-[#6b7280]">VALUE: {lock.engaged ? '1' : '0'}</div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      {lock.engaged
-                        ? <CheckCircle className="h-8 w-8" style={{ color: colors.border }} />
-                        : <AlertTriangle className="h-8 w-8" style={{ color: colors.border }} />}
-                      <div>
-                        <div className="font-semibold text-xl" style={{ color: colors.text }}>
-                          {lock.engaged ? 'ENGAGED' : 'DISENGAGED'}
+                      </div>
+                      <div className="pt-3 border-t border-[#1e3a5f]">
+                        <div className="flex items-center text-xs text-[#6b7280]">
+                          <Clock className="h-3 w-3 mr-2" />
+                          LAST CHECK: {lock.lastCheck.toLocaleTimeString()}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-slate-400">Status: {lock.engaged ? '1' : '0'}</div>
                       </div>
                     </div>
-                    <div className="pt-4 border-t border-gray-100 dark:border-slate-700">
-                      <div className="flex items-center text-sm text-gray-500 dark:text-slate-400">
-                        <Clock className="h-4 w-4 mr-2" />Last Check: {lock.lastCheck.toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -376,10 +550,10 @@ const LockDetectionSystem = () => {
     const hours = Math.floor(flightDuration / 3600000);
     const minutes = Math.floor((flightDuration % 3600000) / 60000);
     const seconds = Math.floor((flightDuration % 60000) / 1000);
-    let csvContent = "Boeing 777F Lock Detection System - Flight Report\n";
+    let csvContent = "Boeing 777F Lock Detection System - Flight Report (DEMO MODE)\n";
     csvContent += `Generated: ${new Date().toLocaleString()}\n`;
     csvContent += `Configuration: ${positionLayouts[selectedLayout].name}\n`;
-    csvContent += `Flight Duration: ${hours}h ${minutes}m ${seconds}s\n`;
+    csvContent += `Session Duration: ${hours}h ${minutes}m ${seconds}s\n`;
     csvContent += `Total Events: ${flightLog.length}\nEngagements: ${engagementCount}\nDisengagements: ${disengagementCount}\n\n`;
     csvContent += "Timestamp,ULD Position,Lock Position,Event,Value\n";
     flightLog.forEach(log => {
@@ -388,7 +562,7 @@ const LockDetectionSystem = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.setAttribute('href', URL.createObjectURL(blob));
-    link.setAttribute('download', `Boeing777F_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Boeing777F_Demo_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -402,67 +576,74 @@ const LockDetectionSystem = () => {
     const hours = Math.floor(flightDuration / 3600000);
     const minutes = Math.floor((flightDuration % 3600000) / 60000);
     return (
-      <div className="animate-fadeIn min-h-screen bg-gray-50 dark:bg-slate-900">
-        <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
+      <div className="animate-fadeIn min-h-screen bg-[#0a0f1a]">
+        <div className="bg-[#0d1321] border-b-2 border-[#1e3a5f] px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => setCurrentView('monitoring')} className="text-gray-400 hover:text-gray-700 dark:hover:text-slate-200 transition-colors">
-                <ArrowLeft className="h-6 w-6" />
+            <div className="flex items-center gap-4">
+              <button onClick={() => setCurrentView('monitoring')} className="text-[#6b7280] hover:text-[#00d4ff] transition-colors">
+                <ArrowLeft className="h-5 w-5" />
               </button>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Flight Report</h1>
-                <p className="text-sm text-gray-500 dark:text-slate-400">Lock Engagement History</p>
+                <h1 className="text-lg font-bold text-white tracking-wide">SESSION REPORT</h1>
+                <p className="text-xs text-[#6b7280] tracking-wider">LOCK ENGAGEMENT HISTORY - DEMO</p>
               </div>
             </div>
-            <button onClick={exportReport} className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-              <Download className="h-4 w-4" /><span>Export CSV</span>
+            <button onClick={exportReport} className="flex items-center gap-2 px-4 py-2 bg-[#00d4ff] hover:bg-[#00b8e0] text-[#0a0f1a] rounded text-xs font-bold transition-colors">
+              <Download className="h-4 w-4" />
+              <span>EXPORT CSV</span>
             </button>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {[
-              { label: 'Flight Duration', value: `${hours}h ${minutes}m`, color: 'text-gray-900 dark:text-slate-100' },
-              { label: 'Total Events',    value: flightLog.length,         color: 'text-gray-900 dark:text-slate-100' },
-              { label: 'Engagements',     value: engagementCount,          color: 'text-green-600 dark:text-green-400' },
-              { label: 'Disengagements',  value: disengagementCount,       color: 'text-red-600 dark:text-red-400' },
+              { label: 'SESSION DURATION', value: `${hours}h ${minutes}m`, color: 'text-white' },
+              { label: 'TOTAL EVENTS', value: flightLog.length, color: 'text-white' },
+              { label: 'ENGAGEMENTS', value: engagementCount, color: 'text-[#22c55e]' },
+              { label: 'DISENGAGEMENTS', value: disengagementCount, color: 'text-[#ef4444]' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-4">
-                <div className="text-sm text-gray-500 dark:text-slate-400 mb-1">{label}</div>
-                <div className={`text-2xl font-bold ${color}`}>{value}</div>
+              <div key={label} className="avion-panel">
+                <div className="p-4">
+                  <div className="text-xs text-[#6b7280] mb-1 tracking-wider">{label}</div>
+                  <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
-            <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">Event Timeline</h2>
-            </div>
+          {/* Event Timeline */}
+          <div className="avion-panel">
+            <div className="avion-panel-header">EVENT TIMELINE</div>
             <div className="overflow-auto max-h-96">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                <thead className="bg-gray-50 dark:bg-slate-700 sticky top-0">
+              <table className="min-w-full">
+                <thead className="bg-[#1e3a5f] sticky top-0">
                   <tr>
-                    {['Timestamp', 'ULD Position', 'Lock Position', 'Event', 'Value'].map(h => (
-                      <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
+                    {['TIMESTAMP', 'ULD POSITION', 'LOCK POSITION', 'EVENT', 'VALUE'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-bold text-[#00d4ff] tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700">
+                <tbody className="divide-y divide-[#1e3a5f]">
                   {flightLog.length === 0 ? (
-                    <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400 dark:text-slate-500">No events recorded</td></tr>
+                    <tr><td colSpan="5" className="px-4 py-12 text-center text-[#6b7280]">No events recorded</td></tr>
                   ) : (
                     flightLog.slice().reverse().map((log, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{log.timestamp.toLocaleTimeString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-slate-200">{log.uldPosition}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">{log.lockPosition}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${log.event === 'ENGAGED' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
+                      <tr key={index} className="hover:bg-[#1e3a5f]/30 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-[#6b7280]">{log.timestamp.toLocaleTimeString()}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-white">{log.uldPosition}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-[#6b7280]">{log.lockPosition}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-bold rounded ${
+                            log.event === 'ENGAGED' 
+                              ? 'bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30' 
+                              : 'bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30'
+                          }`}>
                             {log.event}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-200">{log.value}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-white">{log.value}</td>
                       </tr>
                     ))
                   )}
