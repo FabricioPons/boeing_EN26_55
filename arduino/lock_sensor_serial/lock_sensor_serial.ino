@@ -28,6 +28,17 @@ unsigned long lastDebounceTime = 0;
 const unsigned long debounceDelay = 50;  // 50ms debounce
 unsigned long lastStatusSend = 0;
 const unsigned long statusInterval = 1000;  // Send status every 1 second
+unsigned long eventSeq = 0;  // Monotonic sequence id for latency-test correlation
+
+// Latency-test burst state (driven by BURST <n> <intervalMs> command)
+bool burstActive = false;
+unsigned long burstRemaining = 0;
+unsigned long burstInterval = 0;
+unsigned long burstNextAt = 0;
+bool burstEngaged = true;
+
+// Command buffer for serial input (PING, BURST)
+String cmdBuffer = "";
 
 void setup() {
   // Initialize serial communication at 115200 baud
@@ -46,13 +57,19 @@ void setup() {
 
   // Read and send initial sensor state (inverted: LOW = engaged)
   lastSensorState = digitalRead(SENSOR_PIN);
-  sendSensorData(lastSensorState == LOW);
+  sendSensorData(lastSensorState == LOW, millis());
 
   Serial.println("// Boeing 777F Lock Sensor - USB Serial Mode");
   Serial.println("// Ready to send sensor data...");
 }
 
 void loop() {
+  // Handle inbound commands (PING, BURST) non-blocking
+  processSerialCommands();
+
+  // Drive any in-flight burst test flips
+  runBurstScheduler();
+
   // Read sensor
   int reading = digitalRead(SENSOR_PIN);
 
@@ -65,17 +82,18 @@ void loop() {
 
   // Check for state change (simple approach without debounce for reed switch)
   if (reading != lastSensorState) {
+    unsigned long eventMillis = millis();  // Capture at moment of change
     lastSensorState = reading;
 
     // Send state change over serial (inverted: LOW = engaged)
     bool engaged = (reading == LOW);
-    sendSensorData(engaged);
-    lastStatusSend = millis();  // Reset timer after state change
+    sendSensorData(engaged, eventMillis);
+    lastStatusSend = eventMillis;  // Reset timer after state change
   }
 
   // Send current status periodically (so web app always gets updates)
   if (millis() - lastStatusSend >= statusInterval) {
-    sendSensorData(lastSensorState == LOW);
+    sendSensorData(lastSensorState == LOW, millis());
     lastStatusSend = millis();
   }
 
@@ -83,96 +101,80 @@ void loop() {
   delay(10);
 }
 
-void sendSensorData(bool engaged) {
+void sendSensorData(bool engaged, unsigned long tMillis) {
   // Create JSON payload - must be on a single line ending with newline
   // The web application parses complete lines as JSON objects
   String json = "{";
   json += "\"uldPosition\":\"" + String(ULD_POSITION) + "\",";
   json += "\"lockIndex\":" + String(LOCK_INDEX) + ",";
   json += "\"engaged\":" + String(engaged ? "true" : "false") + ",";
-  json += "\"value\":" + String(engaged ? 1 : 0);
+  json += "\"value\":" + String(engaged ? 1 : 0) + ",";
+  json += "\"t\":" + String(tMillis) + ",";
+  json += "\"seq\":" + String(eventSeq++);
   json += "}";
 
   Serial.println(json);  // println adds newline which marks end of JSON
 }
 
+// Read available bytes and dispatch complete newline-terminated commands.
+void processSerialCommands() {
+  while (Serial.available() > 0) {
+    char c = (char)Serial.read();
+    if (c == '\r') continue;
+    if (c == '\n') {
+      if (cmdBuffer.length() > 0) {
+        handleCommand(cmdBuffer);
+        cmdBuffer = "";
+      }
+    } else {
+      cmdBuffer += c;
+      if (cmdBuffer.length() > 64) cmdBuffer = "";  // Guard against runaway input
+    }
+  }
+}
 
-/*
- * ===========================================
- * MULTI-SENSOR VERSION
- * ===========================================
- *
- * For monitoring multiple locks on a single ULD, modify the code like this:
- *
- * const int NUM_SENSORS = 4;
- * const int SENSOR_PINS[NUM_SENSORS] = {2, 3, 4, 5};
- * const int LOCK_INDICES[NUM_SENSORS] = {0, 1, 2, 3};  // FL, FR, AL, AR
- * int lastStates[NUM_SENSORS] = {-1, -1, -1, -1};
- *
- * Then in loop(), iterate through all sensors:
- *
- * for (int i = 0; i < NUM_SENSORS; i++) {
- *   int reading = digitalRead(SENSOR_PINS[i]);
- *   if (reading != lastStates[i]) {
- *     // debounce logic here...
- *     lastStates[i] = reading;
- *     sendSensorDataMulti(ULD_POSITION, LOCK_INDICES[i], reading == HIGH);
- *   }
- * }
- */
+void handleCommand(const String& line) {
+  if (line.startsWith("PING")) {
+    // Format: PING <id>
+    String idStr = line.length() > 5 ? line.substring(5) : "0";
+    idStr.trim();
+    Serial.print("{\"pong\":");
+    Serial.print(idStr);
+    Serial.print(",\"t\":");
+    Serial.print(millis());
+    Serial.println("}");
+  } else if (line.startsWith("BURST")) {
+    // Format: BURST <n> <intervalMs>
+    int sp1 = line.indexOf(' ');
+    int sp2 = sp1 >= 0 ? line.indexOf(' ', sp1 + 1) : -1;
+    if (sp1 > 0 && sp2 > sp1) {
+      unsigned long n = (unsigned long)line.substring(sp1 + 1, sp2).toInt();
+      unsigned long iv = (unsigned long)line.substring(sp2 + 1).toInt();
+      if (n > 0 && iv > 0) {
+        burstActive = true;
+        burstRemaining = n;
+        burstInterval = iv;
+        burstNextAt = millis();  // Fire first immediately
+        burstEngaged = !(lastSensorState == LOW);  // Start by flipping current state
+      }
+    }
+  }
+}
+
+// Emit burst flips without blocking the main loop.
+void runBurstScheduler() {
+  if (!burstActive) return;
+  unsigned long now = millis();
+  if ((long)(now - burstNextAt) < 0) return;
+  sendSensorData(burstEngaged, now);
+  burstEngaged = !burstEngaged;
+  burstRemaining--;
+  if (burstRemaining == 0) {
+    burstActive = false;
+  } else {
+    burstNextAt = now + burstInterval;
+  }
+}
 
 
-/*
- * ===========================================
- * TESTING WITHOUT A SENSOR
- * ===========================================
- *
- * If you want to test without a physical sensor, you can use the
- * Arduino's built-in LED button or a simple jumper wire:
- *
- * 1. Connect pin 2 to GND with a jumper wire to simulate DISENGAGED
- * 2. Remove the jumper to simulate ENGAGED (pull-up makes it HIGH)
- *
- * Or modify the code to toggle automatically for testing:
- *
- * void loop() {
- *   static bool testState = true;
- *   static unsigned long lastToggle = 0;
- *
- *   if (millis() - lastToggle > 3000) {  // Toggle every 3 seconds
- *     testState = !testState;
- *     sendSensorData(testState);
- *     lastToggle = millis();
- *   }
- * }
- */
-
-
-/*
- * ===========================================
- * WIRING DIAGRAM
- * ===========================================
- *
- *   Arduino Uno Wi-Fi Rev4
- *   +-------------------+
- *   |                   |
- *   |  [USB-C] -------> Connect to Computer
- *   |                   |
- *   |  Pin 2  -------> Lock Sensor Signal
- *   |  GND    -------> Lock Sensor Ground
- *   |  5V     -------> Lock Sensor Power (if needed)
- *   |                   |
- *   +-------------------+
- *
- * For a simple switch/contact sensor:
- * - Connect one terminal to Pin 2
- * - Connect other terminal to GND
- * - The INPUT_PULLUP handles the pull-up resistor internally
- *
- * Sensor closed (contact) = LOW = DISENGAGED
- * Sensor open (no contact) = HIGH = ENGAGED
- *
- * If your sensor logic is inverted, change line 55:
- *   bool engaged = (lastSensorState == LOW);  // Inverted logic
- */
 

@@ -193,7 +193,7 @@ const LockDetectionSystem = () => {
     });
   };
 
-  const ConfigurationView = () => (
+  const renderConfigurationView = () => (
     <div className="animate-fadeIn min-h-screen bg-[#0a0f1a] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header Panel */}
@@ -243,7 +243,7 @@ const LockDetectionSystem = () => {
     </div>
   );
 
-  const MonitoringView = () => {
+  const renderMonitoringView = () => {
     const layout = positionLayouts[selectedLayout];
     const activeAlerts = Object.entries(uldStatuses).filter(([_, status]) => status.overallStatus !== 'engaged');
     const engagedCount = Object.values(uldStatuses).filter(s => s.overallStatus === 'engaged').length;
@@ -487,7 +487,7 @@ const LockDetectionSystem = () => {
     );
   };
 
-  const DetailView = () => {
+  const renderDetailView = () => {
     const status = uldStatuses[selectedULD];
     if (!status) return null;
     return (
@@ -580,7 +580,7 @@ const LockDetectionSystem = () => {
     document.body.removeChild(link);
   };
 
-  const ReportView = () => {
+  const renderReportView = () => {
     const engagementCount = flightLog.filter(log => log.event === 'ENGAGED').length;
     const disengagementCount = flightLog.filter(log => log.event === 'DISENGAGED').length;
     const flightDuration = flightStartTime ? new Date() - flightStartTime : 0;
@@ -669,10 +669,10 @@ const LockDetectionSystem = () => {
 
   return (
     <>
-      {currentView === 'configuration' && <ConfigurationView />}
-      {currentView === 'monitoring'    && <MonitoringView />}
-      {currentView === 'detail'        && <DetailView />}
-      {currentView === 'report'        && <ReportView />}
+      {currentView === 'configuration' && renderConfigurationView()}
+      {currentView === 'monitoring'    && renderMonitoringView()}
+      {currentView === 'detail'        && renderDetailView()}
+      {currentView === 'report'        && renderReportView()}
     </>
   );
 };

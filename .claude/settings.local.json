@@ -6,7 +6,12 @@
       "Bash(npx react-scripts:*)",
       "Bash(timeout 3 node:*)",
       "Bash(gtimeout 3:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git push:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs -r kill -9)",
+      "Bash(npm run *)"
     ]
   }
 }

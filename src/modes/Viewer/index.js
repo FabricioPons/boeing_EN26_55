@@ -80,7 +80,7 @@ const GroundOperatorViewer = () => {
   const securedCount = totalPositions - activeAlerts.length;
 
   /* Header - Mobile optimized */
-  const Header = () => (
+  const renderHeader = () => (
     <header className="bg-[#0d1321] border-b-2 border-[#1e3a5f] sticky top-0 z-20">
       <div className="px-3 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -131,7 +131,7 @@ const GroundOperatorViewer = () => {
   );
 
   /* Monitoring View - Mobile optimized */
-  const MonitoringView = () => (
+  const renderMonitoringView = () => (
     <div className="animate-fadeIn">
       {/* Alert banner - prominent on mobile */}
       {activeAlerts.length > 0 && (
@@ -251,7 +251,7 @@ const GroundOperatorViewer = () => {
   );
 
   /* Detail View - Mobile optimized */
-  const DetailView = () => {
+  const renderDetailView = () => {
     const status = uldStatuses[selectedULD];
     if (!status) { setCurrentView('monitoring'); return null; }
     return (
@@ -304,7 +304,7 @@ const GroundOperatorViewer = () => {
   };
 
   /* Report View - Mobile optimized */
-  const ReportView = () => {
+  const renderReportView = () => {
     const engagementCount = flightLog.filter(l => l.event === 'ENGAGED').length;
     const disengagementCount = flightLog.filter(l => l.event === 'DISENGAGED').length;
     const d = flightStartTime ? new Date() - new Date(flightStartTime) : 0;
@@ -399,10 +399,10 @@ const GroundOperatorViewer = () => {
   /* Main render */
   return (
     <div className="min-h-screen bg-[#0a0f1a] font-mono">
-      <Header />
-      {currentView === 'monitoring' && <MonitoringView />}
-      {currentView === 'detail'     && <DetailView />}
-      {currentView === 'report'     && <ReportView />}
+      {renderHeader()}
+      {currentView === 'monitoring' && renderMonitoringView()}
+      {currentView === 'detail'     && renderDetailView()}
+      {currentView === 'report'     && renderReportView()}
     </div>
   );
 };

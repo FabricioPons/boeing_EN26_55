@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Cable, FlaskConical } from 'lucide-react';
+import { Cable, FlaskConical, Gauge } from 'lucide-react';
 import DemoMode from './modes/Demo';
 import USBMode from './modes/USB';
 import ViewerMode from './modes/Viewer';
+import LatencyTestMode from './modes/LatencyTest';
 
 const isViewerMode = new URLSearchParams(window.location.search).get('mode') === 'viewer';
 
 const MODES = [
-  { id: 'usb',  label: 'USB MODE',  icon: Cable },
-  { id: 'demo', label: 'DEMO MODE', icon: FlaskConical },
+  { id: 'usb',     label: 'USB MODE',     icon: Cable },
+  { id: 'demo',    label: 'DEMO MODE',    icon: FlaskConical },
+  { id: 'latency', label: 'LATENCY TEST', icon: Gauge },
 ];
 
 const App = () => {
@@ -85,8 +87,9 @@ const App = () => {
 
       {/* Active mode content */}
       <main className="flex-1">
-        {activeMode === 'usb'  && <USBMode />}
-        {activeMode === 'demo' && <DemoMode />}
+        {activeMode === 'usb'     && <USBMode />}
+        {activeMode === 'demo'    && <DemoMode />}
+        {activeMode === 'latency' && <LatencyTestMode />}
       </main>
 
       {/* Aviation-style footer */}
