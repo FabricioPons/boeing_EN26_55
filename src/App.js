@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Cable, FlaskConical, Gauge } from 'lucide-react';
+import { Cable, FlaskConical, Gauge, Sun, Moon } from 'lucide-react';
 import DemoMode from './modes/Demo';
 import USBMode from './modes/USB';
 import ViewerMode from './modes/Viewer';
 import LatencyTestMode from './modes/LatencyTest';
 
-const isViewerMode = new URLSearchParams(window.location.search).get('mode') === 'viewer';
+const isViewerMode =
+  new URLSearchParams(window.location.search).get('mode') === 'viewer' ||
+  window.__FORCE_VIEWER__ === true;
 
 const MODES = [
   { id: 'usb',     label: 'USB MODE',     icon: Cable },
@@ -15,11 +17,15 @@ const MODES = [
 
 const App = () => {
   const [activeMode, setActiveMode] = useState('usb');
+  const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
-    // Force dark mode for aviation display
-    document.documentElement.classList.add('dark');
-  }, []);
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
+    root.classList.toggle('light', theme === 'light');
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
 
   if (isViewerMode) return <ViewerMode />;
 
@@ -81,6 +87,19 @@ const App = () => {
                 <span className="hidden sm:inline">{label}</span>
               </button>
             ))}
+
+            <div className="w-px h-8 bg-[#1e3a5f] mx-1" />
+
+            <button
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="flex items-center justify-center p-2 rounded bg-[#1e3a5f] text-[#6b7280] hover:text-white hover:bg-[#2d4a6f] border border-[#2d4a6f] transition-all"
+            >
+              {theme === 'dark'
+                ? <Sun className="h-4 w-4" />
+                : <Moon className="h-4 w-4" />}
+            </button>
           </div>
         </div>
       </header>

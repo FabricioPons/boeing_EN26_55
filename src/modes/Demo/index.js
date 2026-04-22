@@ -71,8 +71,26 @@ const LockDetectionSystem = () => {
   const socketRef = useRef(null);
   const [viewerCount, setViewerCount] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [viewerURL, setViewerURL] = useState(`${window.location.origin}?mode=viewer`);
+  const [tunnelURL, setTunnelURL] = useState(window.__TUNNEL_URL__ || null);
+  const viewerBase = tunnelURL || window.location.origin;
+  const viewerURL = `${viewerBase}?mode=viewer`;
   const [socketConnected, setSocketConnected] = useState(false);
+
+  // Poll the server for the detected tunnel URL
+  useEffect(() => {
+    let cancelled = false;
+    const fetchTunnel = async () => {
+      try {
+        const res = await fetch('/api/tunnel-url');
+        if (!res.ok) return;
+        const { url } = await res.json();
+        if (!cancelled && url) setTunnelURL(url);
+      } catch (e) {}
+    };
+    fetchTunnel();
+    const id = setInterval(fetchTunnel, 5000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
 
   // Connect to relay server for ground operator broadcasting
   useEffect(() => {
@@ -84,10 +102,6 @@ const LockDetectionSystem = () => {
     });
     socket.on('disconnect', () => setSocketConnected(false));
     socket.on('viewer-count', (count) => setViewerCount(count));
-    socket.on('server-info', ({ ip, port }) => {
-      const p = window.location.port ? `:${window.location.port}` : '';
-      setViewerURL(`http://${ip}${p}?mode=viewer`);
-    });
     return () => socket.disconnect();
   }, []);
 
@@ -399,7 +413,7 @@ const LockDetectionSystem = () => {
                         node server.js
                       </code>
                       <p className="text-xs text-[#6b7280] mt-3">
-                        Phone must be on the same WiFi network
+                        Phones can connect from anywhere via the shared link
                       </p>
                     </div>
                   )}

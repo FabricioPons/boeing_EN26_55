@@ -142,3 +142,82 @@ body {
 .status-text {
   transition: color 0.3s ease;
 }
+
+/* ============================================================
+   LIGHT MODE THEME
+   Remaps the hardcoded aviation palette when html.light is set.
+   Default (html.dark) keeps the original dark cockpit look.
+   ============================================================ */
+html.light body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Background surfaces */
+html.light .bg-\[\#0a0f1a\] { background-color: #f1f5f9; }
+html.light .bg-\[\#0d1321\] { background-color: #ffffff; }
+html.light .bg-\[\#1e3a5f\] { background-color: #e2e8f0; }
+html.light .bg-\[\#2d4a6f\] { background-color: #cbd5e1; }
+html.light .hover\:bg-\[\#2d4a6f\]:hover { background-color: #cbd5e1; }
+html.light .bg-\[\#1e3a5f\]\/50 { background-color: rgba(226, 232, 240, 0.6); }
+
+/* Borders */
+html.light .border-\[\#1e3a5f\] { border-color: #cbd5e1; }
+html.light .border-b-\[\#1e3a5f\],
+html.light .border-b-2.border-\[\#1e3a5f\] { border-color: #cbd5e1; }
+html.light .border-\[\#2d4a6f\] { border-color: #94a3b8; }
+html.light .hover\:border-\[\#00d4ff\]:hover { border-color: #0284c7; }
+html.light .divide-\[\#1e3a5f\] > :not([hidden]) ~ :not([hidden]) { border-color: #cbd5e1; }
+
+/* Text colors */
+html.light .text-\[\#6b7280\] { color: #475569; }
+html.light .text-\[\#00d4ff\] { color: #0369a1; }
+html.light .text-white { color: #0f172a; }
+html.light .hover\:text-white:hover { color: #0f172a; }
+html.light .hover\:text-\[\#00d4ff\]:hover { color: #0284c7; }
+
+/* Keep text white on strongly colored badges/buttons (Boeing blue, GU navy,
+   status buttons, etc.) where the background is a saturated color */
+html.light .bg-\[\#0066cc\].text-white,
+html.light .bg-\[\#003D79\].text-white,
+html.light .bg-\[\#ef4444\].text-white,
+html.light .bg-\[\#dc2626\].text-white,
+html.light .hover\:bg-\[\#dc2626\]:hover.text-white {
+  color: #ffffff;
+}
+
+/* Cyan accent buttons keep dark text; cyan stays cyan */
+html.light .bg-\[\#00d4ff\] { background-color: #0284c7; color: #ffffff; }
+html.light .hover\:bg-\[\#00b8e0\]:hover { background-color: #0369a1; }
+html.light .text-\[\#0a0f1a\] { color: #ffffff; }
+
+/* Aviation panels */
+html.light .avion-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: #cbd5e1;
+}
+
+html.light .avion-panel-header {
+  background: #e2e8f0;
+  border-bottom-color: #cbd5e1;
+  color: #0369a1;
+}
+
+/* Scrollbar */
+html.light ::-webkit-scrollbar-track { background: #f1f5f9; }
+html.light ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Selection */
+html.light ::selection {
+  background: rgba(2, 132, 199, 0.25);
+  color: #0f172a;
+}
+
+/* Smooth theme transitions on major surfaces */
+html.light body,
+html.dark body,
+.avion-panel,
+.avion-panel-header {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}

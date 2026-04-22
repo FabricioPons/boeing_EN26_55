@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const path = require('path');
 const os = require('os');
@@ -10,13 +11,49 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
-// Serve React build
-app.use(express.static(path.join(__dirname, 'build')));
-app.get('/{*splat}', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+let tunnelUrl = null;
+const TUNNEL_HOST_PATTERN = /trycloudflare\.com|cfargotunnel\.com|ngrok(-free)?\.(app|io|dev)/i;
+
+function detectTunnel(req) {
+  const fwd = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'];
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const viaTunnelHost = TUNNEL_HOST_PATTERN.test(host);
+  const isTunnel = !!fwd || viaTunnelHost;
+  if (isTunnel && host) {
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    tunnelUrl = `${proto}://${host}`;
+  }
+  return isTunnel;
+}
+
+const INDEX_PATH = path.join(__dirname, 'build', 'index.html');
+
+function serveIndex(req, res) {
+  const isTunnel = detectTunnel(req);
+  let html;
+  try {
+    html = fs.readFileSync(INDEX_PATH, 'utf-8');
+  } catch (e) {
+    return res.status(500).send('build/index.html missing — run `npm run build` first.');
+  }
+  const flags = [];
+  if (isTunnel) flags.push('window.__FORCE_VIEWER__=true;');
+  if (tunnelUrl) flags.push(`window.__TUNNEL_URL__=${JSON.stringify(tunnelUrl)};`);
+  if (flags.length) {
+    html = html.replace('<head>', `<head><script>${flags.join('')}</script>`);
+  }
+  res.type('html').send(html);
+}
+
+app.get('/api/tunnel-url', (req, res) => {
+  detectTunnel(req);
+  res.json({ url: tunnelUrl });
 });
 
-// Track viewers
+app.get('/', serveIndex);
+app.use(express.static(path.join(__dirname, 'build'), { index: false }));
+app.get('/{*splat}', serveIndex);
+
 const viewers = new Set();
 let latestState = null;
 

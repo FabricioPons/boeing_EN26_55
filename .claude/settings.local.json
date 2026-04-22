@@ -11,7 +11,18 @@
       "Bash(kill:*)",
       "Bash(lsof:*)",
       "Bash(xargs -r kill -9)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(git checkout *)",
+      "Bash(brew install *)",
+      "Bash(npm start *)",
+      "Bash(curl *)",
+      "Bash(PORT=3002 BROWSER=none npm start *)",
+      "Bash(npx eslint *)",
+      "Bash(ps -p 8361 -o command=)",
+      "Bash(ps -p 83873 -o command=)",
+      "Bash(cloudflared --version)",
+      "Bash(cloudflared tunnel *)",
+      "Bash(ps *)"
     ]
   }
 }
